@@ -40,9 +40,11 @@ public class HashVisualization : MonoBehaviour {
         public float invResolution;
 
         public void Execute(int i) {
-            float v = floor(invResolution * i + 0.00001f);
-            float u = i - resolution * v;
-            hashes[i] = (uint)(frac(u * v * 0.381f) * 256f);
+            int v = (int)floor(invResolution * i + 0.00001f);
+            int u = i - resolution * v - resolution / 2;
+            v -= resolution / 2;
+
+            hashes[i] = SmallXXHash.Seed(0).Eat(u).Eat(v);
         }
     }
 
