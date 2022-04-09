@@ -29,6 +29,12 @@ public class HashVisualization : MonoBehaviour {
 
     MaterialPropertyBlock propertyBlock;
 
+    [SerializeField, Range(-2f, 2f)]
+    float verticalOffset = 1f;
+        
+    [SerializeField]
+    int seed;
+
     [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, CompileSynchronously = true)]
     struct HashJob : IJobFor {
 
@@ -39,12 +45,14 @@ public class HashVisualization : MonoBehaviour {
 
         public float invResolution;
 
+        public SmallXXHash hash;
+
         public void Execute(int i) {
             int v = (int)floor(invResolution * i + 0.00001f);
             int u = i - resolution * v - resolution / 2;
             v -= resolution / 2;
 
-            hashes[i] = SmallXXHash.Seed(0).Eat(u).Eat(v);
+            hashes[i] = hash.Eat(u).Eat(v);
         }
     }
 
@@ -56,14 +64,17 @@ public class HashVisualization : MonoBehaviour {
         new HashJob {
             hashes = hashes,
             resolution = resolution,
-            invResolution = 1f / resolution
+            invResolution = 1f / resolution,
+            hash = SmallXXHash.Seed(seed)
         }.ScheduleParallel(hashes.Length, resolution, default).Complete();
     
         hashesBuffer.SetData(hashes);
     
         propertyBlock ??= new MaterialPropertyBlock();
         propertyBlock.SetBuffer(hashesId, hashesBuffer);
-        propertyBlock.SetVector(configId, new Vector4(resolution, 1f / resolution));
+        propertyBlock.SetVector(configId, new Vector4(
+            resolution, 1f / resolution, verticalOffset / resolution
+        ));
     }
 
     void OnDisable() {
